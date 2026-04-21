@@ -2,53 +2,56 @@ import { useState, useEffect } from 'react';
 import type { HistoryItem } from '../types/analysis';
 
 export const MAX_ENTRIES = 50;
-const STORAGE_KEY = 'tiebreaker_history';
 
 export function useHistory() {
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const stored = localStorage.getItem('tiebreaker-history');
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return []; // dato corrupto: empezar limpio
+      return [];
     }
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-    } catch (e: any) {
-      if (e.name === 'QuotaExceededError') {
-        // Eliminar el item mas antiguo y reintentar automaticamente
-        setHistory(prev => prev.slice(0, -1));
-      }
-    }
+    localStorage.setItem('tiebreaker-history', JSON.stringify(history));
   }, [history]);
 
   const addItem = (item: HistoryItem) => {
-    setHistory(prev => [item, ...prev].slice(0, MAX_ENTRIES));
+    setHistory((prev) => {
+      const newHistory = [item, ...prev];
+      if (newHistory.length > MAX_ENTRIES) {
+        return newHistory.slice(0, MAX_ENTRIES);
+      }
+      return newHistory;
+    });
   };
 
   const deleteItem = (id: string) => {
-    setHistory(prev => prev.filter(item => item.id !== id));
+    setHistory((prev) => prev.filter((item) => item.id !== id));
   };
 
   const clearAll = () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar todo el historial?')) {
-      setHistory([]);
-    }
+    setHistory([]);
   };
 
   const exportHistory = () => {
-    const data = JSON.stringify(history, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `tiebreaker-historial-${Date.now()}.json`;
-    anchor.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tiebreaker-history-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  return { history, addItem, deleteItem, clearAll, exportHistory };
+  return {
+    history,
+    addItem,
+    deleteItem,
+    clearAll,
+    exportHistory
+  };
 }

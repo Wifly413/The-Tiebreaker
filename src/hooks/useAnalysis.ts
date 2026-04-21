@@ -1,8 +1,20 @@
 import { useState, useRef } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { AnalysisType, AnalysisResult } from '../types/analysis';
+import { AI_PROMPTS } from '../constants/prompts';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAIClient(): GoogleGenAI {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is missing. Please set it in your environment variables.');
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export function useAnalysis() {
   const [loading, setLoading] = useState(false);
@@ -19,67 +31,23 @@ export function useAnalysis() {
     setResult(null);
 
     try {
-      let responseSchema;
-      let systemInstruction = '';
-
-      if (analysisType === 'pros-cons') {
-        systemInstruction = 'You are an expert decision-making assistant. Analyze the user\'s dilemma and provide a list of pros and cons, along with a final conclusion or recommendation. Respond in Spanish if the prompt is in Spanish.';
-        responseSchema = {
-          type: Type.OBJECT,
-          properties: {
-            pros: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'List of pros or advantages.' },
-            cons: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'List of cons or disadvantages.' },
-            conclusion: { type: Type.STRING, description: 'A final thought or recommendation.' }
-          },
-          required: ['pros', 'cons', 'conclusion']
-        };
-      } else if (analysisType === 'comparative') {
-        systemInstruction = 'You are an expert decision-making assistant. Analyze the user\'s dilemma, identify the main options being considered, determine key criteria for comparison, and evaluate each option against those criteria. Finally, provide a conclusion. Respond in Spanish if the prompt is in Spanish.';
-        responseSchema = {
-          type: Type.OBJECT,
-          properties: {
-            criteria: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'The criteria used for comparison.' },
-            options: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING, description: 'Name of the option.' },
-                  evaluations: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Evaluation of this option for each criterion, in the same order as the criteria array.' }
-                },
-                required: ['name', 'evaluations']
-              }
-            },
-            conclusion: { type: Type.STRING, description: 'A final thought or recommendation.' }
-          },
-          required: ['criteria', 'options', 'conclusion']
-        };
-      } else {
-        systemInstruction = 'You are an expert decision-making assistant. Perform a SWOT (Strengths, Weaknesses, Opportunities, Threats) analysis on the user\'s dilemma. Provide a final conclusion. Respond in Spanish if the prompt is in Spanish.';
-        responseSchema = {
-          type: Type.OBJECT,
-          properties: {
-            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-            weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-            opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-            threats: { type: Type.ARRAY, items: { type: Type.STRING } },
-            conclusion: { type: Type.STRING }
-          },
-          required: ['strengths', 'weaknesses', 'opportunities', 'threats', 'conclusion']
-        };
-      }
+      const ai = getAIClient();
+      
+      // Select the correct prompt and schema from our decoupled constants
+      const promptConfig = AI_PROMPTS[analysisType];
+      let finalSystemInstruction = promptConfig.systemInstruction;
 
       if (customInstructions.trim()) {
-        systemInstruction += `\n\nAdditional user instructions to strictly follow: ${customInstructions}`;
+        finalSystemInstruction += `\n\nAdditional user instructions to strictly follow: ${customInstructions}`;
       }
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Help me make this decision: ${decision}`,
         config: {
-          systemInstruction,
+          systemInstruction: finalSystemInstruction,
           responseMimeType: 'application/json',
-          responseSchema,
+          responseSchema: promptConfig.responseSchema,
           temperature: 0.7,
         }
       });
@@ -94,7 +62,20 @@ export function useAnalysis() {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'An error occurred while analyzing your decision.');
+      
+      // Provide robust error handling and specialized UX messages
+      let displayError = 'Se produjo un error al analizar la decisiÃ³n. Por favor, intenta de nuevo.';
+      const rawMsg = err.message ? err.message.toLowerCase() : '';
+      
+      if (rawMsg.includes('429') || rawMsg.includes('quota')) {
+        displayError = 'LÃ­mite de IA excedido o servicio saturado (429). Por favor, espera unos minutos antes de volver a intentarlo.';
+      } else if (rawMsg.includes('503')) {
+        displayError = 'Los servidores de IA estÃ¡n sobrecargados temporalmente (503). Intenta de nuevo en unos instantes.';
+      } else if (rawMsg.includes('api_key')) {
+        displayError = 'Hay un problema con tu clave de API (GEMINI_API_KEY). Verifica la configuraciÃ³n de tus variables de entorno.';
+      }
+
+      setError(displayError);
       return null;
     } finally {
       setLoading(false);
