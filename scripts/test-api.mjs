@@ -148,6 +148,63 @@ async function main() {
   });
   check('analyze acepta lente', lensResponse.status === 200);
 
+  /* ------------------------------------------- cabeceras de OpenCode Go ---- */
+
+  const firstHeaders = await call(mockPort, '/__headers');
+  check(
+    'el proveedor recibe un User-Agent de producto (no de librería)',
+    /the-tiebreaker/i.test(firstHeaders.json?.userAgent || ''),
+    String(firstHeaders.json?.userAgent),
+  );
+  check(
+    'el proveedor recibe x-opencode-session',
+    /^[A-Za-z0-9-]{8,64}$/.test(firstHeaders.json?.session || ''),
+    String(firstHeaders.json?.session),
+  );
+
+  const again = await call(mainPort, '/api/analyze', {
+    method: 'POST',
+    body: { decision: DECISION, analysisType: 'balance' },
+  });
+  const secondHeaders = await call(mockPort, '/__headers');
+  check('dos peticiones seguidas reutilizan la sesión (fallback por IP)', again.status === 200 && secondHeaders.json?.session === firstHeaders.json?.session);
+
+  const clientSession = await call(mainPort, '/api/analyze', {
+    method: 'POST',
+    headers: { 'X-Tiebreaker-Session': 'browser-session-abc123' },
+    body: { decision: DECISION, analysisType: 'balance' },
+  });
+  const thirdHeaders = await call(mockPort, '/__headers');
+  check(
+    'la sesión del navegador se reenvía tal cual',
+    clientSession.status === 200 && thirdHeaders.json?.session === 'browser-session-abc123',
+    String(thirdHeaders.json?.session),
+  );
+
+  const uglySession = await call(mainPort, '/api/analyze', {
+    method: 'POST',
+    headers: { 'X-Tiebreaker-Session': 'weird<script>value!with·chars' },
+    body: { decision: DECISION, analysisType: 'balance' },
+  });
+  const fourthHeaders = await call(mockPort, '/__headers');
+  check(
+    'la sesión se sanea a [A-Za-z0-9-]',
+    uglySession.status === 200 && /^[A-Za-z0-9-]+$/.test(fourthHeaders.json?.session || ''),
+    String(fourthHeaders.json?.session),
+  );
+
+  await setMode('no-session');
+  const sessionError = await call(mainPort, '/api/analyze', {
+    method: 'POST',
+    body: { decision: DECISION, analysisType: 'balance' },
+  });
+  check(
+    'un 400 por sesión se explica como PROVIDER_SESSION (sin reintento)',
+    sessionError.status === 502 && sessionError.json?.code === 'PROVIDER_SESSION',
+    `${sessionError.status} ${sessionError.json?.code}`,
+  );
+  await setMode('ok');
+
   /* ------------------------------------------------------------- validación */
 
   const noDecision = await call(mainPort, '/api/analyze', { method: 'POST', body: { analysisType: 'balance' } });

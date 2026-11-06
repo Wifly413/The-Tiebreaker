@@ -24,7 +24,7 @@ services:
       - key: OPENCODE_MODEL
         value: deepseek-v4.1-flash
       - key: OPENCODE_BASE_URL
-        value: https://opencode.ai/inference/openai/v1
+        value: https://opencode.ai/inference/go/openai/v1
       - key: RATE_LIMIT_MAX
         value: "8"
       - key: DAILY_LIMIT

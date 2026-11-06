@@ -2,6 +2,20 @@
  * Cliente del proveedor: OpenCode Console (API compatible con OpenAI Chat
  * Completions). Sin SDK: una llamada `fetch` y un contrato JSON explícito.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * OpenCode Go exige que el cliente se identifique con su propio User-Agent
+ * (no uno genérico de librería) y envíe un `x-opencode-session` estable por
+ * conversación; sin la cabecera devuelve 400 "cannot be routed efficiently".
+ */
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
+);
+const USER_AGENT = `the-tiebreaker/${packageJson.version || '0.0.0'} (+https://github.com/Wifly413/The-Tiebreaker)`;
 
 export class UpstreamError extends Error {
   constructor(message, { code = 'PROVIDER_ERROR', status = 502, retryAfter = null, cause } = {}) {
@@ -44,7 +58,7 @@ function extractText(content) {
   return '';
 }
 
-async function requestCompletion(messages, config, signal, useJsonMode) {
+async function requestCompletion(messages, config, signal, useJsonMode, sessionId) {
   const endpoint = `${config.baseUrl}/chat/completions`;
   const body = {
     model: config.model,
@@ -61,6 +75,8 @@ async function requestCompletion(messages, config, signal, useJsonMode) {
         Authorization: `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        'User-Agent': USER_AGENT,
+        'x-opencode-session': sessionId,
       },
       body: JSON.stringify(body),
       signal,
@@ -80,8 +96,17 @@ async function requestCompletion(messages, config, signal, useJsonMode) {
       detail = raw.slice(0, 400);
     }
 
+    // La sesión va primero: un 400 por `x-opencode-session` no se gana con un
+    // segundo intento (y el reintento genérico de 400 lo taparía).
+    if (response.status === 400 && /x-opencode-session/i.test(detail)) {
+      throw new UpstreamError(
+        'El proveedor pide identificación de sesión (x-opencode-session) y el servidor no la envió. Actualiza el servidor a la última versión.',
+        { code: 'PROVIDER_SESSION', status: 502 },
+      );
+    }
+    // Algunos modelos del gateway no aceptan response_format: se reintenta una
+    // vez sin él (mismo sessionId, misma conversación).
     if (response.status === 400 && useJsonMode) {
-      // Algunos modelos del gateway no aceptan response_format: se reintenta una vez sin él.
       return { retryWithoutJsonMode: true, status: response.status };
     }
     if (response.status === 401) {
@@ -136,8 +161,9 @@ async function requestCompletion(messages, config, signal, useJsonMode) {
  * @param {Array<{role: string, content: string}>} messages
  * @param {ReturnType<import('./config.mjs').readConfig>} config
  * @param {AbortSignal} [signal]
+ * @param {string} [sessionId] estable por conversación (OpenCode Go lo exige)
  */
-export async function createCompletion(messages, config, signal) {
+export async function createCompletion(messages, config, signal, sessionId) {
   if (!config.apiKey) {
     throw new UpstreamError(
       'El servidor no tiene configurada la clave del proveedor (OPENCODE_API_KEY).',
@@ -147,12 +173,14 @@ export async function createCompletion(messages, config, signal) {
 
   const timeoutSignal = AbortSignal.timeout(config.timeoutMs);
   const composed = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+  // Misma sesión en el reintento: la conversación no cambia a mitad de petición.
+  const session = sessionId || randomUUID();
 
   try {
-    const first = await requestCompletion(messages, config, composed, config.jsonMode !== 'none');
+    const first = await requestCompletion(messages, config, composed, config.jsonMode !== 'none', session);
     if (!first.retryWithoutJsonMode) return first;
 
-    const second = await requestCompletion(messages, config, composed, false);
+    const second = await requestCompletion(messages, config, composed, false, session);
     return second;
   } catch (error) {
     if (timeoutSignal.aborted && !signal?.aborted) {

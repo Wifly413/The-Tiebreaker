@@ -15,6 +15,8 @@ import http from 'node:http';
 const PORT = Number(process.env.PORT || 4010);
 let mode = 'ok';
 let hits = 0;
+/** Últimas cabeceras vistas: los tests comprueban User-Agent y x-opencode-session. */
+let lastHeaders = {};
 
 const ENVELOPE = {
   verdict: 'Cierra el local en junio y deja la consultoría en septiembre: el colchón cubre once meses.',
@@ -108,11 +110,18 @@ const server = http.createServer((req, res) => {
     if (req.url === '/__count') {
       return sendJson(res, 200, { hits, mode });
     }
+    if (req.url === '/__headers') {
+      return sendJson(res, 200, lastHeaders);
+    }
     if (req.method !== 'POST' || !req.url.startsWith('/chat/completions')) {
       return sendJson(res, 404, { error: { message: 'Ruta no encontrada' } });
     }
 
     hits += 1;
+    lastHeaders = {
+      userAgent: req.headers['user-agent'] || null,
+      session: req.headers['x-opencode-session'] || null,
+    };
     let body = {};
     try {
       body = JSON.parse(raw || '{}');
@@ -122,6 +131,24 @@ const server = http.createServer((req, res) => {
 
     if (!req.headers.authorization?.startsWith('Bearer ')) {
       return sendJson(res, 401, { error: { message: 'Missing bearer token' } });
+    }
+
+    // OpenCode Go rechaza con 400 si falta la cabecera de sesión: el mock la
+    // exige también para que los tests fallen si el servidor deja de enviarla.
+    if (mode !== 'no-session' && !req.headers['x-opencode-session']) {
+      return sendJson(res, 400, {
+        error: { message: 'Request is missing x-opencode-session and cannot be routed efficiently.' },
+      });
+    }
+    if (mode !== 'no-session' && !/the-tiebreaker/i.test(req.headers['user-agent'] || '')) {
+      return sendJson(res, 400, {
+        error: { message: 'Request must identify itself with a product User-Agent.' },
+      });
+    }
+    if (mode === 'no-session') {
+      return sendJson(res, 400, {
+        error: { message: 'Request is missing x-opencode-session and cannot be routed efficiently.' },
+      });
     }
 
     if (mode === '400-on-json' && body.response_format) {

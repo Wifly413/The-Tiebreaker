@@ -40,6 +40,22 @@ const MESSAGES_BY_STATUS: Record<number, string> = {
   504: 'El proveedor ha tardado demasiado en responder. Vuelve a intentarlo.',
 };
 
+/**
+ * Sesión estable por pestaña: OpenCode Go la exige en `x-opencode-session`
+ * para enrutar y cachear el prompt. El servidor la reenvía al proveedor; si el
+ * navegador no la manda, él deriva una por IP.
+ */
+let sessionToken: string | null = null;
+function getSessionToken(): string {
+  if (!sessionToken) {
+    sessionToken =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+  return sessionToken;
+}
+
 function friendlyMessage(status: number): string {
   return MESSAGES_BY_STATUS[status] ?? 'No se pudo completar el análisis. Vuelve a intentarlo.';
 }
@@ -74,7 +90,11 @@ export async function requestAnalysis(
   try {
     response = await fetch('/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Tiebreaker-Session': getSessionToken(),
+      },
       body: JSON.stringify({
         decision: input.decision,
         analysisType: input.analysisType,

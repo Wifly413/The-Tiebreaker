@@ -24,6 +24,23 @@ const packageJson = JSON.parse(fs.readFileSync(path.join(here, '..', 'package.js
 
 export const APP_VERSION = packageJson.version || '0.0.0';
 
+/**
+ * Sesión que se reenvía al proveedor en `x-opencode-session` (la exige OpenCode
+ * Go para enrutar y cachear). Prefiere la del navegador; si no llega o es rara,
+ * deriva una estable por IP. Se sanea a [A-Za-z0-9-] y 8-64 caracteres para no
+ * convertir la cabecera en un canal de datos.
+ */
+function resolveSessionId(req) {
+  const raw = req.get('x-tiebreaker-session') || '';
+  const sanitized = raw.replace(/[^A-Za-z0-9-]/g, '').slice(0, 64);
+  if (sanitized.length >= 8) return sanitized;
+
+  const ip = req.ip || 'anon';
+  let hash = 5381;
+  for (let i = 0; i < ip.length; i += 1) hash = ((hash << 5) + hash + ip.charCodeAt(i)) >>> 0;
+  return `ip-${hash.toString(36)}`;
+}
+
 function readVersion() {
   return APP_VERSION;
 }
@@ -118,7 +135,12 @@ export function createApp(config = readConfig()) {
 
     try {
       const messages = buildMessages(analysisType, decision, lens);
-      const { text, usage, model } = await createCompletion(messages, config, controller.signal);
+      const { text, usage, model } = await createCompletion(
+        messages,
+        config,
+        controller.signal,
+        resolveSessionId(req),
+      );
 
       let parsed;
       try {

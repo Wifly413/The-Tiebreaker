@@ -52,7 +52,19 @@ npm run test:api   # tests de la API con un proveedor falso (sin red ni saldo)
 ## Proveedor: OpenCode Console
 
 La integración usa la API **compatible con OpenAI** de [OpenCode Console](https://opencode.ai/console):
-`POST https://opencode.ai/inference/openai/v1/chat/completions` con `Authorization: Bearer <clave>`.
+`POST <OPENCODE_BASE_URL>/chat/completions` con `Authorization: Bearer <clave>`.
+
+**OpenCode Go (suscripción)** usa el endpoint prefijado con `/go/`:
+
+```
+OPENCODE_BASE_URL=https://opencode.ai/inference/go/openai/v1
+```
+
+Además, Go exige que el cliente se identifique y declare sesión (si no, responde
+`400 … missing x-opencode-session`): el servidor envía un `User-Agent` de producto
+(`the-tiebreaker/<versión>`) y reenvía la sesión que genera el navegador en cada
+pestaña; si no llega, deriva una estable por IP. Eso además habilita la caché de
+prompt del gateway.
 
 | Variable | Por defecto | Para qué |
 | --- | --- | --- |
