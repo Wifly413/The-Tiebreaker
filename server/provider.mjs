@@ -19,6 +19,8 @@ const FRIENDLY = {
   model:
     'El proveedor rechazó la petición (403/404). Comprueba que OPENCODE_MODEL es un modelo de pago: los modelos gratuitos de OpenCode solo funcionan dentro de OpenCode.',
   rate: 'El proveedor ha limitado las peticiones (429). Espera un minuto y vuelve a intentarlo.',
+  balance:
+    'La cuenta del proveedor no tiene saldo (402). Añade créditos en OpenCode Console o cambia de modelo o de proveedor.',
   rejected: 'El proveedor ha rechazado la petición. Vuelve a intentarlo o cambia de modelo.',
   unavailable: 'El proveedor no está disponible ahora mismo. Vuelve a intentarlo en unos instantes.',
   timeout: 'El proveedor ha tardado demasiado en responder. Vuelve a intentarlo.',
@@ -87,6 +89,9 @@ async function requestCompletion(messages, config, signal, useJsonMode) {
     }
     if (response.status === 403 || response.status === 404) {
       throw new UpstreamError(FRIENDLY.model, { code: 'MODEL_UNAVAILABLE', status: 502 });
+    }
+    if (response.status === 402) {
+      throw new UpstreamError(FRIENDLY.balance, { code: 'PROVIDER_BALANCE', status: 402 });
     }
     if (response.status === 429) {
       const retryAfter = Number(response.headers.get('retry-after')) || null;

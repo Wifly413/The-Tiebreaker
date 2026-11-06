@@ -72,6 +72,18 @@ Una lectura típica gasta ~1.000 tokens de entrada y ~600 de salida: **menos de 
 También funciona cualquier endpoint compatible con OpenAI (OpenRouter, Groq, Together, DeepSeek):
 basta con cambiar `OPENCODE_BASE_URL` y `OPENCODE_MODEL`.
 
+### Si el proveedor responde con error
+
+| Código | Qué significa | Qué hacer |
+| --- | --- | --- |
+| **402** `PROVIDER_BALANCE` | La cuenta de OpenCode Console no tiene saldo. | Añade créditos en https://opencode.ai/console o cambia `OPENCODE_MODEL`/`OPENCODE_BASE_URL` a otro proveedor que ya pagues. |
+| **403** `MODEL_UNAVAILABLE` | Has elegido un modelo gratuito: solo funciona dentro de OpenCode. | Usa un modelo de pago (`deepseek-v4.1-flash`, `glm-5.3-flash`, `gpt-5-nano`…). |
+| **502** `PROVIDER_AUTH` | La clave no es válida o ha caducado. | Revísala en *Environment* del servicio. |
+| **429** `RATE_LIMIT` | Demasiadas peticiones al proveedor o a esta demo. | Espera; los límites por IP y diarios están en `.env.example`. |
+
+El error exacto del proveedor se incluye en el mensaje que ve la persona (por ejemplo
+`402: Insufficient account funds`), así que no hace falta mirar los logs para diagnosticar.
+
 ## Desplegar en Render
 
 El repo trae `render.yaml` (Blueprint) preparado. Pasos:

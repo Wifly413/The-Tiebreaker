@@ -182,6 +182,7 @@ async function main() {
 
   const upstreamCases = [
     ['401', 502, 'PROVIDER_AUTH'],
+    ['402', 402, 'PROVIDER_BALANCE'],
     ['403', 502, 'MODEL_UNAVAILABLE'],
     ['429', 429, 'RATE_LIMIT'],
     ['500', 502, 'PROVIDER_UNAVAILABLE'],

@@ -32,6 +32,7 @@ export class AnalysisRequestError extends Error {
 
 const MESSAGES_BY_STATUS: Record<number, string> = {
   400: 'La petición no es válida. Revisa el dilema y vuelve a intentarlo.',
+  402: 'La cuenta del proveedor no tiene saldo. Añade créditos o cambia de modelo.',
   413: 'El texto enviado es demasiado largo.',
   429: 'Demasiadas lecturas seguidas. Espera unos minutos y vuelve a intentarlo.',
   502: 'El proveedor de IA no ha devuelto una lectura válida. Vuelve a intentarlo.',

@@ -129,6 +129,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (mode === '401') return sendJson(res, 401, { error: { message: 'invalid api key' } });
+    if (mode === '402') return sendJson(res, 402, { error: { message: 'Insufficient account funds' } });
     if (mode === '403') return sendJson(res, 403, { error: { message: 'free models are only available from within OpenCode' } });
     if (mode === '429') {
       res.setHeader('Retry-After', '42');
