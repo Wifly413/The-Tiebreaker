@@ -1,0 +1,31 @@
+/**
+ * Blueprint de Render: un único servicio web Node que sirve el front compilado y
+ * la API. La clave del proveedor se define en el dashboard (sync: false), nunca
+ * en el repositorio.
+ *
+ * Despliegue: Render → New → Blueprint → conecta el repo. Al crear el servicio,
+ * Render pedirá el valor de OPENCODE_API_KEY.
+ */
+services:
+  - type: web
+    name: the-tiebreaker
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.2
+      - key: OPENCODE_API_KEY
+        sync: false
+      - key: OPENCODE_MODEL
+        value: deepseek-v4.1-flash
+      - key: OPENCODE_BASE_URL
+        value: https://opencode.ai/inference/openai/v1
+      - key: RATE_LIMIT_MAX
+        value: "8"
+      - key: DAILY_LIMIT
+        value: "300"

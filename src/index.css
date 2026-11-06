@@ -1,3 +1,398 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------
+   Tokens — ver design/direction.md
+   Semánticos, nunca por valor. Ningún componente usa un hex directo.
+------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* campo / tinta */
+  --paper: oklch(0.963 0.004 100);
+  --paper-2: oklch(0.988 0.002 100);
+  --paper-3: oklch(0.944 0.004 100);
+  --ink: oklch(0.24 0.008 100);
+  --ink-2: oklch(0.45 0.008 100);
+  --ink-3: oklch(0.62 0.006 100);
+  --rule: oklch(0.878 0.004 100);
+  --rule-strong: oklch(0.8 0.006 100);
+
+  /* señal: lápiz rojo */
+  --signal: oklch(0.55 0.19 28);
+  --signal-deep: oklch(0.47 0.17 28);
+  --signal-soft: oklch(0.945 0.028 28);
+
+  /* tintas de anotación */
+  --for: oklch(0.44 0.055 175);
+  --for-soft: oklch(0.945 0.018 175);
+  --against: oklch(0.45 0.085 30);
+  --against-soft: oklch(0.945 0.022 30);
+
+  /* pares semánticos de control */
+  --btn-bg: var(--signal-deep);
+  --btn-fg: oklch(0.985 0.004 100);
+  --btn-bg-hover: oklch(0.4 0.155 28);
+  --btn-bg-disabled: oklch(0.9 0.004 100);
+  --btn-fg-disabled: oklch(0.55 0.006 100);
+  --signal-deep-hover: oklch(0.4 0.155 28);
+
+  --grain-opacity: 0.035;
+  --scrim: oklch(0.24 0.008 100 / 0.62);
+
+  /* geometría */
+  --r: 2px;
+  --page: 1240px;
+
+  /* movimiento */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 560ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --stagger: 60ms;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --paper: oklch(0.195 0.006 100);
+  --paper-2: oklch(0.235 0.006 100);
+  --paper-3: oklch(0.172 0.006 100);
+  --ink: oklch(0.94 0.005 100);
+  --ink-2: oklch(0.735 0.008 100);
+  --ink-3: oklch(0.56 0.008 100);
+  --rule: oklch(0.32 0.008 100);
+  --rule-strong: oklch(0.42 0.008 100);
+
+  --signal: oklch(0.68 0.205 29);
+  --signal-deep: oklch(0.63 0.23 30);
+  --signal-soft: oklch(0.28 0.045 28);
+
+  --for: oklch(0.75 0.06 175);
+  --for-soft: oklch(0.27 0.02 175);
+  --against: oklch(0.73 0.1 30);
+  --against-soft: oklch(0.27 0.025 30);
+
+  --btn-bg: var(--signal);
+  --btn-fg: oklch(0.16 0.01 28);
+  --btn-bg-hover: oklch(0.71 0.19 30);
+  --btn-bg-disabled: oklch(0.27 0.006 100);
+  --btn-fg-disabled: oklch(0.52 0.006 100);
+  --signal-deep-hover: oklch(0.69 0.21 30);
+
+  --grain-opacity: 0.05;
+  --scrim: oklch(0.08 0.006 100 / 0.72);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-signal: var(--signal);
+  --color-signal-deep: var(--signal-deep);
+  --color-signal-soft: var(--signal-soft);
+  --color-for: var(--for);
+  --color-for-soft: var(--for-soft);
+  --color-against: var(--against);
+  --color-against-soft: var(--against-soft);
+  --color-btn: var(--btn-bg);
+  --color-btn-fg: var(--btn-fg);
+
+  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-plate: 0px;
+  --radius-control: 2px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    font-variant-ligatures: common-ligatures;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    text-wrap: pretty;
+    transition: background-color var(--dur-2) var(--ease-standard),
+      color var(--dur-2) var(--ease-standard);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  textarea {
+    resize: none;
+  }
+
+  ::selection {
+    background: var(--signal-soft);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: var(--r);
+  }
+
+  /* El papel: un grano estático, no animado. Único tratamiento de textura. */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    z-index: 100;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .skip-link:focus {
+    left: 8px;
+  }
+}
+
+@layer components {
+  /* Micro-tipo mono: etiquetas de campo y metadatos. Caja baja, sin tracking de plantilla. */
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.02em;
+  }
+
+  .display {
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+    font-stretch: 92%;
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--rule);
+    width: 100%;
+  }
+
+  /* Campo de texto: filete inferior, foco con regla de tinta */
+  .field {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    padding: 16px 18px;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: var(--ink);
+    transition: border-color var(--dur-1) var(--ease-standard),
+      background-color var(--dur-1) var(--ease-standard);
+  }
+  .field::placeholder {
+    color: var(--ink-2);
+    opacity: 1;
+  }
+  .field:hover {
+    border-color: var(--rule-strong);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--ink);
+    background: var(--paper-2);
+  }
+  .field:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 1px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r);
+    padding: 12px 18px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease-standard),
+      color var(--dur-1) var(--ease-standard),
+      border-color var(--dur-1) var(--ease-standard),
+      opacity var(--dur-1) var(--ease-standard);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    border-color: var(--btn-bg);
+    min-height: 52px;
+    padding-inline: 24px;
+    font-size: 0.9375rem;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--btn-bg-hover);
+    border-color: var(--btn-bg-hover);
+  }
+  .btn-primary:disabled {
+    background: var(--btn-bg-disabled);
+    border-color: var(--btn-bg-disabled);
+    color: var(--btn-fg-disabled);
+  }
+
+  .btn-quiet {
+    background: transparent;
+    color: var(--ink-2);
+    border-color: var(--rule);
+  }
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--ink);
+    border-color: var(--ink-3);
+    background: var(--paper-3);
+  }
+
+  .btn-quiet-danger {
+    background: transparent;
+    color: var(--ink-2);
+    border-color: var(--rule);
+  }
+  .btn-quiet-danger:hover:not(:disabled) {
+    color: var(--signal);
+    border-color: var(--signal);
+    background: var(--signal-soft);
+  }
+
+  .btn-danger {
+    background: var(--signal-deep);
+    color: var(--paper);
+    border-color: var(--signal-deep);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--signal-deep-hover);
+    border-color: var(--signal-deep-hover);
+  }
+
+  .dialog-overlay {
+    background: var(--scrim);
+    animation: overlay-in var(--dur-2) var(--ease-standard) both;
+  }
+
+  .dialog-panel {
+    animation: panel-in var(--dur-3) var(--ease-out) both;
+  }
+  .link-quiet {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color var(--dur-1) var(--ease-standard),
+      border-color var(--dur-1) var(--ease-standard);
+  }
+  .link-quiet:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink-3);
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

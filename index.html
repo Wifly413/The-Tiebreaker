@@ -1,13 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f3f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="description"
+      content="The Tiebreaker: escribe el dilema, elige un método y recibe una lectura con veredicto, inclinación y primer paso."
+    />
+    <title>The Tiebreaker — lectura de decisiones</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231d1c1a'/%3E%3Cpath d='M5 12 L27 9' stroke='%23f4f3f0' stroke-width='1.4' fill='none'/%3E%3Cpath d='M16 10.5 V21' stroke='%23f4f3f0' stroke-width='1.4' fill='none'/%3E%3Cpath d='M16 27 L12 21 H20 Z' fill='%23c8402f'/%3E%3C/svg%3E"
+    />
+
+    <script>
+      // Evita el destello de tema: aplica la clase antes del primer pintado.
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

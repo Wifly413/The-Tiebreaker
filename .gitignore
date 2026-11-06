@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# capturas de revisión de diseño
+shots/
