@@ -63,21 +63,27 @@ interface ModePlateProps {
 }
 
 export function ModePlate({ method, index, total, selected, onSelect }: ModePlateProps) {
+  // En claro la placa activa es una estampa de tinta; en oscuro se invierte el
+  // campo y sería la superficie más brillante de la página, así que se marca
+  // con filete y un paso de superficie (la elevación va por filete).
+  const shell = selected
+    ? 'bg-ink text-paper dark:border dark:border-ink-3 dark:bg-paper-3 dark:text-ink'
+    : 'bg-paper text-ink hover:bg-paper-3 dark:hover:border dark:hover:border-rule-strong';
+  const glyph = selected
+    ? 'text-paper dark:text-ink-2'
+    : 'text-ink-2 group-hover:text-ink';
+  const indexColor = selected ? 'text-paper/70 dark:text-ink-2' : 'text-ink-2';
+
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`group grid h-full grid-cols-[46px_1fr] items-start gap-x-4 p-4 text-left transition-colors duration-150 sm:flex sm:flex-col sm:justify-between sm:p-5 ${
-        selected ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-paper-3'
-      }`}
+      className={`group grid h-full grid-cols-[46px_1fr] items-start gap-x-4 p-4 text-left transition-colors duration-150 sm:flex sm:flex-col sm:justify-between sm:p-5 ${shell}`}
     >
       <span className="flex flex-col items-start gap-2 sm:w-full sm:flex-row sm:items-start sm:justify-between">
-        <InstrumentGlyph
-          id={method.id}
-          className={`h-7 w-auto sm:h-8 ${selected ? 'text-paper' : 'text-ink-2 group-hover:text-ink'}`}
-        />
-        <span className={`mono text-[0.625rem] ${selected ? 'text-paper/70' : 'text-ink-2'}`}>
+        <InstrumentGlyph id={method.id} className={`h-7 w-auto sm:h-8 ${glyph}`} />
+        <span className={`mono text-[0.625rem] ${indexColor}`}>
           {String(index + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}
         </span>
       </span>
@@ -85,14 +91,14 @@ export function ModePlate({ method, index, total, selected, onSelect }: ModePlat
       <span className="block sm:mt-8">
         <span
           className={`block text-[0.9375rem] font-semibold leading-tight tracking-[-0.01em] ${
-            selected ? 'text-paper' : 'text-ink'
+            selected ? 'text-paper dark:text-ink' : 'text-ink'
           }`}
         >
           {method.name}
         </span>
         <span
           className={`mt-1.5 block text-[0.75rem] leading-[1.45] sm:mt-2 ${
-            selected ? 'text-paper/75' : 'text-ink-2'
+            selected ? 'text-paper/75 dark:text-ink-2' : 'text-ink-2'
           }`}
         >
           {method.measures}

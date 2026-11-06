@@ -281,6 +281,8 @@ export interface UseHistoryReturn {
   history: HistoryItem[];
   addItem: (item: HistoryItem) => void;
   deleteItem: (id: string) => void;
+  /** Reinserta una lectura borrada en su posición original (deshacer). */
+  restoreItem: (item: HistoryItem, index: number) => void;
   clearAll: () => void;
   exportHistory: () => void;
 }
@@ -323,6 +325,16 @@ export function useHistory(): UseHistoryReturn {
     setHistory((previous) => previous.filter((item) => item.id !== id));
   }, []);
 
+  const restoreItem = useCallback((item: HistoryItem, index: number) => {
+    setHistory((previous) => {
+      if (previous.some((entry) => entry.id === item.id)) return previous;
+      const next = [...previous];
+      const target = Math.min(Math.max(index, 0), next.length);
+      next.splice(target, 0, item);
+      return next.slice(0, MAX_ENTRIES);
+    });
+  }, []);
+
   const clearAll = useCallback(() => {
     setHistory([]);
   }, []);
@@ -346,5 +358,5 @@ export function useHistory(): UseHistoryReturn {
     URL.revokeObjectURL(url);
   }, [history]);
 
-  return { history, addItem, deleteItem, clearAll, exportHistory };
+  return { history, addItem, deleteItem, restoreItem, clearAll, exportHistory };
 }

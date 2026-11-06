@@ -11,6 +11,7 @@ import { DossierForm } from './components/DossierForm';
 import { ReadoutRail } from './components/ReadoutRail';
 import { ArchiveList } from './components/ArchiveList';
 import { AnalysisView } from './components/AnalysisView';
+import { CaseStrip } from './components/CaseStrip';
 import { CopyButton } from './components/CopyButton';
 import { formatResultForClipboard } from './utils/formatClipboard';
 
@@ -29,7 +30,7 @@ function prefersReducedMotion(): boolean {
 
 export default function App() {
   const [view, setView] = useState<AppView>('nuevo');
-  const { history, addItem, deleteItem, clearAll, exportHistory } = useHistory();
+  const { history, addItem, deleteItem, restoreItem, clearAll, exportHistory } = useHistory();
   const { analyze, loadDemo, reset, loading, error, result } = useAnalysis();
   const { isDark, toggle } = useDarkMode();
   const service = useServiceStatus();
@@ -39,6 +40,7 @@ export default function App() {
   const [customInstructions, setCustomInstructions] = useState('');
   const [showLens, setShowLens] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [editingCase, setEditingCase] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
   const [resultStamp, setResultStamp] = useState<number | null>(null);
 
@@ -97,6 +99,7 @@ export default function App() {
       return;
     }
     setResultStamp(Date.now());
+    setEditingCase(false);
     addItem({
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -112,6 +115,7 @@ export default function App() {
     if (!demo) return;
     setDecision(demo.decision);
     setResultStamp(Date.now());
+    setEditingCase(false);
     shouldScroll.current = true;
     loadDemo(demo.result);
   };
@@ -121,7 +125,10 @@ export default function App() {
     setAnalysisType(next);
     reset();
     setResultStamp(null);
+    setEditingCase(false);
   };
+
+  const showCaseStrip = Boolean(result) && !editingCase && view === 'nuevo';
 
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
@@ -145,7 +152,20 @@ export default function App() {
 
         {view === 'nuevo' ? (
           <>
-            <div className="grid grid-cols-1 py-10 lg:grid-cols-12 lg:gap-0 lg:py-14">
+            {showCaseStrip && result ? (
+              <div className="pt-6">
+                <CaseStrip
+                  decision={decision}
+                  method={selectedMethod}
+                  timestamp={resultStamp}
+                  onEdit={() => {
+                    setEditingCase(true);
+                    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 py-10 lg:grid-cols-12 lg:gap-0 lg:py-14">
               <div className="lg:col-span-7 lg:pr-12">
                 <DossierForm
                   decision={decision}
@@ -173,6 +193,22 @@ export default function App() {
                 />
               </div>
             </div>
+            )}
+
+            {editingCase && result && (
+              <div className="flex justify-end border-b border-rule pb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCase(false);
+                    scrollToReading();
+                  }}
+                  className="mono border-b border-ink-3 pb-0.5 text-[0.75rem] text-ink transition-colors duration-150 hover:border-signal hover:text-signal"
+                >
+                  Volver a la lectura
+                </button>
+              </div>
+            )}
 
             <section ref={resultRef} aria-labelledby="lectura-titulo" className="scroll-mt-24">
               {result && (
@@ -217,7 +253,12 @@ export default function App() {
                 </div>
               )}
             </div>
-            <ArchiveList history={history} onDelete={deleteItem} onStartNew={() => setView('nuevo')} />
+            <ArchiveList
+              history={history}
+              onDelete={deleteItem}
+              onRestore={restoreItem}
+              onStartNew={() => setView('nuevo')}
+            />
           </div>
         )}
       </main>

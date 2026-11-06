@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, Trash2, Undo2 } from 'lucide-react';
 import type { HistoryItem } from '../types/analysis';
 import { methodName } from '../constants/methods';
 import { AnalysisView } from './AnalysisView';
@@ -18,15 +18,34 @@ const longDate = new Intl.DateTimeFormat('es-ES', {
 interface ArchiveListProps {
   history: HistoryItem[];
   onDelete: (id: string) => void;
+  onRestore: (item: HistoryItem, index: number) => void;
   onStartNew: () => void;
 }
 
-export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps) {
+export function ArchiveList({ history, onDelete, onRestore, onStartNew }: ArchiveListProps) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [lastDeleted, setLastDeleted] = useState<{ item: HistoryItem; index: number } | null>(null);
+  const undoTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (openId && !history.some((item) => item.id === openId)) setOpenId(null);
   }, [history, openId]);
+
+  useEffect(() => () => window.clearTimeout(undoTimer.current), []);
+
+  const handleDelete = (item: HistoryItem, index: number) => {
+    onDelete(item.id);
+    setLastDeleted({ item, index });
+    window.clearTimeout(undoTimer.current);
+    undoTimer.current = window.setTimeout(() => setLastDeleted(null), 8000);
+  };
+
+  const handleUndo = () => {
+    if (!lastDeleted) return;
+    window.clearTimeout(undoTimer.current);
+    onRestore(lastDeleted.item, lastDeleted.index);
+    setLastDeleted(null);
+  };
 
   if (history.length === 0) {
     return (
@@ -57,7 +76,7 @@ export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps)
         const date = new Date(item.timestamp);
         return (
           <article key={item.id} className="border-b border-rule">
-            <div className="flex items-start gap-3 py-4 sm:gap-5 sm:py-5">
+            <div className="group flex items-start gap-3 py-4 sm:gap-5 sm:py-5">
               <span className="mono hidden w-5 shrink-0 pt-1 text-[0.625rem] text-ink-3 sm:block">
                 {String(index + 1).padStart(2, '0')}
               </span>
@@ -66,7 +85,7 @@ export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps)
                 type="button"
                 onClick={() => setOpenId(open ? null : item.id)}
                 aria-expanded={open}
-                className="group flex-1 text-left"
+                className="flex-1 text-left"
               >
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="label text-ink">{methodName(item.analysisType)}</span>
@@ -83,7 +102,7 @@ export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps)
                 </span>
               </button>
 
-              <div className="flex shrink-0 items-center gap-1 pt-0.5">
+              <div className="flex shrink-0 items-center gap-3 pt-0.5">
                 <span
                   className="num w-9 text-right text-[0.75rem] text-ink-2"
                   title={`Inclinación ${tilt} de 100`}
@@ -92,8 +111,8 @@ export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps)
                 </span>
                 <button
                   type="button"
-                  onClick={() => onDelete(item.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-[2px] text-ink-3 transition-colors duration-150 hover:bg-paper-3 hover:text-signal"
+                  onClick={() => handleDelete(item, index)}
+                  className="flex h-8 w-8 items-center justify-center rounded-[2px] text-ink-2 opacity-100 transition-opacity duration-150 hover:bg-paper-3 hover:text-signal sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                   aria-label={`Eliminar la lectura «${item.decision}»`}
                   title="Eliminar"
                 >
@@ -127,6 +146,25 @@ export function ArchiveList({ history, onDelete, onStartNew }: ArchiveListProps)
           </article>
         );
       })}
+
+      {lastDeleted && (
+        <div
+          role="status"
+          className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 border border-ink bg-paper-2 px-4 py-2.5 shadow-none"
+        >
+          <p className="max-w-[38ch] truncate text-[0.8125rem] text-ink-2">
+            Lectura eliminada: <span className="text-ink">{lastDeleted.item.decision}</span>
+          </p>
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="flex shrink-0 items-center gap-1.5 border-b border-ink-3 pb-0.5 text-[0.75rem] text-ink transition-colors duration-150 hover:border-signal hover:text-signal"
+          >
+            <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Deshacer
+          </button>
+        </div>
+      )}
     </div>
   );
 }
