@@ -9,3 +9,6 @@ coverage/
 
 # capturas de revisión de diseño
 shots/
+
+# Hallmark
+.hallmark/

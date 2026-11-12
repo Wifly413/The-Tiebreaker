@@ -191,9 +191,8 @@ export function HeadToHeadView({ result, dense = false }: HeadToHeadViewProps) {
             <li key={index} className="border-b border-rule py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="label">opción {optionLetter(index)}</p>
-                  <h4 className="mt-1 text-[1.0625rem] font-semibold leading-snug text-ink">
-                    {option.name}
+                  <h4 className="text-[1.0625rem] font-semibold leading-snug text-ink">
+                    {optionLetter(index)}. {option.name}
                   </h4>
                   <p className="mt-0.5 max-w-[34ch] text-[0.8125rem] leading-[1.4] text-ink-2">
                     {option.summary}

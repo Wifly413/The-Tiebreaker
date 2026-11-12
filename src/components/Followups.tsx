@@ -26,10 +26,7 @@ export function Followups({ result, dense = false }: FollowupsProps) {
         {assumptions.length > 0 ? (
           <ul className="mt-1">
             {assumptions.map((assumption, index) => (
-              <li key={index} className="flex items-baseline gap-2 border-b border-rule py-2">
-                <span className="mono shrink-0 text-[0.625rem] text-ink-3" aria-hidden="true">
-                  —
-                </span>
+              <li key={index} className="border-b border-rule py-2">
                 <span className="max-w-[62ch] text-[0.9375rem] leading-[1.5] text-ink">
                   {assumption}
                 </span>

@@ -265,7 +265,10 @@ export default function App() {
 
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-[1240px] flex-col gap-2 px-5 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:px-8">
-          <span className="label">The Tiebreaker — lectura de decisiones</span>
+          <span className="flex flex-wrap items-baseline gap-x-2">
+            <span className="label">The Tiebreaker</span>
+            <span className="label">lectura de decisiones</span>
+          </span>
           <span className="label">
             Tres métodos: balanza ponderada, cara a cara, mapa estratégico.
           </span>
@@ -286,8 +289,7 @@ export default function App() {
             className="dialog-panel w-full max-w-md border border-ink bg-paper-2 p-6 sm:p-8"
             onClick={(event) => event.stopPropagation()}
           >
-            <p className="label">Confirmación</p>
-            <h2 id="vaciar-titulo" className="mt-2 text-[1.375rem] font-semibold leading-tight">
+            <h2 id="vaciar-titulo" className="text-[1.375rem] font-semibold leading-tight">
               ¿Vaciar el archivo?
             </h2>
             <p id="vaciar-detalle" className="mt-3 text-[0.9375rem] leading-[1.55] text-ink-2">

@@ -50,6 +50,8 @@ export function useDarkMode(): { isDark: boolean; toggle: () => void } {
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     if (preference === null) return;
     try {
       window.localStorage.setItem(THEME_KEY, preference);

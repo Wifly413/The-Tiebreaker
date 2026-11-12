@@ -38,8 +38,7 @@ export function ReadoutRail({ method, latest, onJumpToResult }: ReadoutRailProps
         <p className="mt-2 text-[0.8125rem] leading-[1.5] text-ink-2">{method.measures}</p>
         <ul className="mt-4">
           {method.returns.map((item) => (
-            <li key={item} className="flex items-baseline gap-2 border-b border-rule py-2">
-              <span className="mono text-[0.625rem] text-ink-3">—</span>
+            <li key={item} className="border-b border-rule py-2">
               <span className="text-[0.8125rem] leading-snug text-ink">{item}</span>
             </li>
           ))}
